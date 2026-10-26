@@ -7,7 +7,12 @@ from pydantic import ValidationError
 
 from database import get_db, MovieModel
 from database.models import CountryModel, GenreModel, ActorModel, LanguageModel
-from schemas.movies import MovieListResponseSchema, MovieCreateSchema, MovieDetailSchema
+from schemas.movies import (
+    MovieListResponseSchema,
+    MovieCreateSchema,
+    MovieDetailSchema,
+    MovieUpdateSchema,
+)
 
 router = APIRouter()
 
@@ -41,7 +46,7 @@ async def get_movies(
 
     total_pages = (total_items + per_page - 1) // per_page
 
-    base_url = request.url.path
+    base_url = request.url.path.replace("/api/v1", "", 1)
 
     prev_page = (
         f"{base_url}?page={page - 1}&per_page={per_page}"
@@ -241,12 +246,6 @@ async def update_movie(
         data = MovieUpdateSchema.model_validate(payload)
         update_data = data.model_dump(exclude_unset=True)
     except ValidationError:
-        raise HTTPException(
-            status_code=400,
-            detail="Invalid input data."
-        )
-
-    if any(value is None for value in update_data.values()):
         raise HTTPException(
             status_code=400,
             detail="Invalid input data."

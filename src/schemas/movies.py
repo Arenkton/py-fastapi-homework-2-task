@@ -1,4 +1,4 @@
-from datetime import date
+import datetime
 from decimal import Decimal
 from typing import Literal
 
@@ -8,7 +8,7 @@ from pydantic import BaseModel, ConfigDict, Field, field_validator
 class MovieListItemSchema(BaseModel):
     id: int
     name: str
-    date: date
+    date: datetime.date
     score: float
     overview: str
 
@@ -23,10 +23,9 @@ class MovieListResponseSchema(BaseModel):
     total_items: int
 
 
-
 class MovieCreateSchema(BaseModel):
     name: str = Field(max_length=255)
-    date: date
+    date: datetime.date
     score: float = Field(ge=0, le=100)
     overview: str
     status: Literal[
@@ -43,8 +42,11 @@ class MovieCreateSchema(BaseModel):
 
     @field_validator("date")
     @classmethod
-    def validate_date(cls, value: date) -> date:
-        today = date.today()
+    def validate_date(
+        cls,
+        value: datetime.date
+    ) -> datetime.date:
+        today = datetime.date.today()
 
         try:
             max_date = today.replace(year=today.year + 1)
@@ -80,7 +82,7 @@ class RelatedEntitySchema(BaseModel):
 class MovieDetailSchema(BaseModel):
     id: int
     name: str
-    date: date
+    date: datetime.date
     score: float
     overview: str
     status: str
@@ -96,7 +98,7 @@ class MovieDetailSchema(BaseModel):
 
 class MovieUpdateSchema(BaseModel):
     name: str | None = Field(default=None, max_length=255)
-    date: date | None = None
+    date: datetime.date | None = None
     score: float | None = Field(default=None, ge=0, le=100)
     overview: str | None = None
     status: Literal[
@@ -107,13 +109,32 @@ class MovieUpdateSchema(BaseModel):
     budget: Decimal | None = Field(default=None, ge=0)
     revenue: Decimal | None = Field(default=None, ge=0)
 
+    @field_validator(
+        "name",
+        "date",
+        "score",
+        "overview",
+        "status",
+        "budget",
+        "revenue",
+        mode="before"
+    )
+    @classmethod
+    def reject_null(cls, value):
+        if value is None:
+            raise ValueError("Field cannot be null.")
+        return value
+
     @field_validator("date")
     @classmethod
-    def validate_date(cls, value: date | None) -> date | None:
+    def validate_date(
+        cls,
+        value: datetime.date | None
+    ) -> datetime.date | None:
         if value is None:
             return value
 
-        today = date.today()
+        today = datetime.date.today()
 
         try:
             max_date = today.replace(year=today.year + 1)
